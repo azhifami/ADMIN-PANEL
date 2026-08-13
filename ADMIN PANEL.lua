@@ -16,12 +16,8 @@ local Player = Players.LocalPlayer
 
 local ADMIN_NAME = "ASTRONIXP"
 
--- MASUKKAN ASSET ID GAMBAR MUKA LU DI SINI
--- Contoh: rbxassetid://123456789
-local FACE_IMAGE_ID = "rbxassetid://MASUKKAN_ID_GAMBAR"
-
--- MASUKKAN ASSET ID SUARA PRANK
-local PRANK_SOUND_ID = "rbxassetid://MASUKKAN_ID_SUARA"
+local FACE_IMAGE_ID = "rbxassetid://122974943335311"
+local PRANK_SOUND_ID = "rbxassetid://138890398994853"
 
 --========================================================--
 -- ADMIN CHECK
