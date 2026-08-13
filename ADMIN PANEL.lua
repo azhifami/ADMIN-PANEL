@@ -1,6 +1,7 @@
 --========================================================--
---              ASTRONIXP ADMIN PANEL V2                  --
---                    SINGLE FILE                         --
+--          ASTRONIXP ADMIN PANEL V2.1                  --
+--       MOBILE RESPONSIVE + SCROLLING                  --
+--                  SINGLE FILE                         --
 --========================================================--
 
 local Players = game:GetService("Players")
@@ -18,10 +19,6 @@ local ADMIN_NAME = "ASTRONIXP"
 
 local FACE_IMAGE_ID = "rbxassetid://122974943335311"
 local PRANK_SOUND_ID = "rbxassetid://138890398994853"
-
---========================================================--
--- ADMIN CHECK
---========================================================--
 
 if Player.Name ~= ADMIN_NAME then
 	return
@@ -44,15 +41,10 @@ local FlyConnection
 local FlyVelocity
 local FlyAttachment
 
+local FlyVertical = 0
+
 local Minimized = false
 local Maximized = false
-local Closed = false
-
-local NormalSize = UDim2.new(0, 350, 0, 520)
-local NormalPosition = UDim2.new(0.5, -175, 0.5, -260)
-
-local MaxSize = UDim2.new(0, 600, 0, 650)
-local MaxPosition = UDim2.new(0.5, -300, 0.5, -325)
 
 --========================================================--
 -- CHARACTER
@@ -76,9 +68,13 @@ Player.CharacterAdded:Connect(function()
 	UpdateCharacter()
 
 	if Humanoid then
+
 		Humanoid.WalkSpeed = WalkSpeed
+
 		Humanoid.UseJumpPower = true
+
 		Humanoid.JumpPower = JumpPower
+
 	end
 
 end)
@@ -89,9 +85,10 @@ end)
 
 local GUI = Instance.new("ScreenGui")
 
-GUI.Name = "ASTRONIXP_ADMIN_PANEL_V2"
+GUI.Name = "ASTRONIXP_ADMIN_V21"
 GUI.ResetOnSpawn = false
 GUI.IgnoreGuiInset = true
+
 GUI.Parent = Player:WaitForChild("PlayerGui")
 
 --========================================================--
@@ -102,11 +99,14 @@ local Face = Instance.new("ImageLabel")
 
 Face.Name = "FACE_PRANK"
 
-Face.Size = UDim2.new(1, 0, 1, 0)
-Face.Position = UDim2.new(0, 0, 0, 0)
+Face.Size = UDim2.fromScale(1, 1)
+Face.Position = UDim2.fromScale(0, 0)
 
-Face.BackgroundTransparency = 1
+Face.BackgroundColor3 = Color3.new(0, 0, 0)
+Face.BackgroundTransparency = 0
+
 Face.Image = FACE_IMAGE_ID
+Face.ScaleType = Enum.ScaleType.Stretch
 
 Face.Visible = false
 Face.ZIndex = 999
@@ -121,18 +121,71 @@ local Main = Instance.new("Frame")
 
 Main.Name = "Main"
 
-Main.Size = NormalSize
-Main.Position = NormalPosition
-
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 Main.BorderSizePixel = 0
+
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
 
 Main.Parent = GUI
 
 local MainCorner = Instance.new("UICorner")
 
 MainCorner.CornerRadius = UDim.new(0, 14)
+
 MainCorner.Parent = Main
+
+--========================================================--
+-- RESPONSIVE SIZE
+--========================================================--
+
+local function SetNormalSize()
+
+	local Camera = workspace.CurrentCamera
+
+	if not Camera then
+		return
+	end
+
+	local Viewport = Camera.ViewportSize
+
+	local Width = math.min(350, Viewport.X - 20)
+	local Height = math.min(520, Viewport.Y - 20)
+
+	Main.Size = UDim2.fromOffset(Width, Height)
+	Main.Position = UDim2.fromScale(0.5, 0.5)
+
+end
+
+local function SetMaxSize()
+
+	local Camera = workspace.CurrentCamera
+
+	if not Camera then
+		return
+	end
+
+	local Viewport = Camera.ViewportSize
+
+	Main.Size = UDim2.fromOffset(
+		math.max(250, Viewport.X - 10),
+		math.max(250, Viewport.Y - 10)
+	)
+
+	Main.Position = UDim2.fromScale(0.5, 0.5)
+
+end
+
+SetNormalSize()
+
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+
+	if not Maximized then
+		SetNormalSize()
+	else
+		SetMaxSize()
+	end
+
+end)
 
 --========================================================--
 -- TITLE BAR
@@ -140,7 +193,7 @@ MainCorner.Parent = Main
 
 local TitleBar = Instance.new("Frame")
 
-TitleBar.Size = UDim2.new(1, 0, 0, 55)
+TitleBar.Size = UDim2.new(1, 0, 0, 52)
 
 TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
 TitleBar.BorderSizePixel = 0
@@ -153,15 +206,18 @@ TitleBar.Parent = Main
 
 local Title = Instance.new("TextLabel")
 
-Title.Size = UDim2.new(1, -150, 1, 0)
-Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(1, -135, 1, 0)
+
+Title.Position = UDim2.fromOffset(10, 0)
 
 Title.BackgroundTransparency = 1
 
-Title.Text = "⚡ ASTRONIXP ADMIN V2"
+Title.Text = "⚡ ASTRONIXP ADMIN"
+
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-Title.TextSize = 19
+Title.TextSize = 17
+
 Title.Font = Enum.Font.GothamBold
 
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -169,114 +225,30 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TitleBar
 
 --========================================================--
--- MINIMIZE
+-- TITLE BUTTON
 --========================================================--
 
-local MinButton = Instance.new("TextButton")
-
-MinButton.Size = UDim2.new(0, 40, 0, 40)
-MinButton.Position = UDim2.new(1, -135, 0, 7)
-
-MinButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-MinButton.Text = "—"
-
-MinButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinButton.TextSize = 22
-
-MinButton.Font = Enum.Font.GothamBold
-
-MinButton.Parent = TitleBar
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 8)
-MinCorner.Parent = MinButton
-
---========================================================--
--- MAXIMIZE
---========================================================--
-
-local MaxButton = Instance.new("TextButton")
-
-MaxButton.Size = UDim2.new(0, 40, 0, 40)
-MaxButton.Position = UDim2.new(1, -90, 0, 7)
-
-MaxButton.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-
-MaxButton.Text = "□"
-
-MaxButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MaxButton.TextSize = 18
-
-MaxButton.Font = Enum.Font.GothamBold
-
-MaxButton.Parent = TitleBar
-
-local MaxCorner = Instance.new("UICorner")
-MaxCorner.CornerRadius = UDim.new(0, 8)
-MaxCorner.Parent = MaxButton
-
---========================================================--
--- CLOSE
---========================================================--
-
-local CloseButton = Instance.new("TextButton")
-
-CloseButton.Size = UDim2.new(0, 40, 0, 40)
-CloseButton.Position = UDim2.new(1, -45, 0, 7)
-
-CloseButton.BackgroundColor3 = Color3.fromRGB(150, 45, 45)
-
-CloseButton.Text = "×"
-
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 25
-
-CloseButton.Font = Enum.Font.GothamBold
-
-CloseButton.Parent = TitleBar
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 8)
-CloseCorner.Parent = CloseButton
-
---========================================================--
--- CONTENT
---========================================================--
-
-local Content = Instance.new("Frame")
-
-Content.Size = UDim2.new(1, 0, 1, -55)
-Content.Position = UDim2.new(0, 0, 0, 55)
-
-Content.BackgroundTransparency = 1
-
-Content.Parent = Main
-
---========================================================--
--- BUTTON CREATOR
---========================================================--
-
-local function CreateButton(Text, Y)
+local function TitleButton(Text, X, Color)
 
 	local Button = Instance.new("TextButton")
 
-	Button.Size = UDim2.new(1, -30, 0, 42)
+	Button.Size = UDim2.fromOffset(36, 36)
 
-	Button.Position = UDim2.new(0, 15, 0, Y)
+	Button.Position = UDim2.new(1, X, 0, 8)
 
-	Button.BackgroundColor3 = Color3.fromRGB(42, 42, 52)
+	Button.BackgroundColor3 = Color
 
 	Button.BorderSizePixel = 0
 
 	Button.Text = Text
 
-	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Button.TextColor3 = Color3.new(1, 1, 1)
 
-	Button.TextSize = 16
+	Button.TextSize = 20
 
 	Button.Font = Enum.Font.GothamBold
 
-	Button.Parent = Content
+	Button.Parent = TitleBar
 
 	local Corner = Instance.new("UICorner")
 
@@ -288,39 +260,171 @@ local function CreateButton(Text, Y)
 
 end
 
---========================================================--
--- FLY BUTTON
---========================================================--
+local MinButton = TitleButton(
+	"—",
+	-125,
+	Color3.fromRGB(60, 60, 70)
+)
 
-local FlyButton = CreateButton(
-	"🪽 FLY : OFF",
-	20
+local MaxButton = TitleButton(
+	"□",
+	-85,
+	Color3.fromRGB(60, 60, 70)
+)
+
+local CloseButton = TitleButton(
+	"×",
+	-45,
+	Color3.fromRGB(150, 45, 45)
 )
 
 --========================================================--
--- FLY UP/DOWN MOBILE
+-- SCROLLING CONTENT
 --========================================================--
 
-local UpButton = CreateButton(
-	"⬆ FLY UP",
-	70
-)
+local Content = Instance.new("ScrollingFrame")
 
-local DownButton = CreateButton(
-	"⬇ FLY DOWN",
-	120
-)
+Content.Name = "Content"
+
+Content.Size = UDim2.new(1, 0, 1, -52)
+
+Content.Position = UDim2.fromOffset(0, 52)
+
+Content.BackgroundTransparency = 1
+
+Content.BorderSizePixel = 0
+
+Content.ScrollBarThickness = 6
+
+Content.ScrollBarImageTransparency = 0.2
+
+Content.ScrollingDirection = Enum.ScrollingDirection.Y
+
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+Content.Parent = Main
+
+--========================================================--
+-- LIST LAYOUT
+--========================================================--
+
+local Padding = Instance.new("UIPadding")
+
+Padding.PaddingTop = UDim.new(0, 12)
+Padding.PaddingBottom = UDim.new(0, 15)
+Padding.PaddingLeft = UDim.new(0, 12)
+Padding.PaddingRight = UDim.new(0, 12)
+
+Padding.Parent = Content
+
+local Layout = Instance.new("UIListLayout")
+
+Layout.Padding = UDim.new(0, 10)
+
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+Layout.Parent = Content
+
+--========================================================--
+-- ELEMENT CREATOR
+--========================================================--
+
+local function CreateButton(Text)
+
+	local Button = Instance.new("TextButton")
+
+	Button.Size = UDim2.new(1, 0, 0, 44)
+
+	Button.BackgroundColor3 = Color3.fromRGB(42, 42, 52)
+
+	Button.BorderSizePixel = 0
+
+	Button.Text = Text
+
+	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+	Button.TextSize = 15
+
+	Button.Font = Enum.Font.GothamBold
+
+	Button.LayoutOrder = #Content:GetChildren()
+
+	Button.Parent = Content
+
+	local Corner = Instance.new("UICorner")
+
+	Corner.CornerRadius = UDim.new(0, 9)
+
+	Corner.Parent = Button
+
+	return Button
+
+end
+
+local function CreateBox(Placeholder, Default)
+
+	local Box = Instance.new("TextBox")
+
+	Box.Size = UDim2.new(1, 0, 0, 42)
+
+	Box.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+
+	Box.BorderSizePixel = 0
+
+	Box.Text = Default or ""
+
+	Box.PlaceholderText = Placeholder
+
+	Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+	Box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+
+	Box.TextSize = 15
+
+	Box.Font = Enum.Font.Gotham
+
+	Box.ClearTextOnFocus = false
+
+	Box.LayoutOrder = #Content:GetChildren()
+
+	Box.Parent = Content
+
+	local Corner = Instance.new("UICorner")
+
+	Corner.CornerRadius = UDim.new(0, 9)
+
+	Corner.Parent = Box
+
+	return Box
+
+end
+
+--========================================================--
+-- FLY
+--========================================================--
+
+local FlyButton = CreateButton("🪽 FLY : OFF")
+
+local UpButton = CreateButton("⬆ FLY UP")
+
+local DownButton = CreateButton("⬇ FLY DOWN")
 
 UpButton.Visible = false
 DownButton.Visible = false
 
 --========================================================--
--- FLY SYSTEM V2
+-- STOP FLY
 --========================================================--
 
 local function StopFly()
 
 	Flying = false
+
+	FlyVertical = 0
 
 	FlyButton.Text = "🪽 FLY : OFF"
 
@@ -359,7 +463,9 @@ local function StopFly()
 
 end
 
-local FlyVertical = 0
+--========================================================--
+-- START FLY
+--========================================================--
 
 local function StartFly()
 
@@ -382,12 +488,10 @@ local function StartFly()
 
 	Humanoid.PlatformStand = true
 
-	-- Attachment
 	FlyAttachment = Instance.new("Attachment")
 
 	FlyAttachment.Parent = RootPart
 
-	-- Linear velocity
 	FlyVelocity = Instance.new("LinearVelocity")
 
 	FlyVelocity.Attachment0 = FlyAttachment
@@ -402,11 +506,7 @@ local function StartFly()
 
 	FlyConnection = RunService.RenderStepped:Connect(function()
 
-		if not Flying then
-			return
-		end
-
-		if not RootPart then
+		if not Flying or not RootPart then
 			return
 		end
 
@@ -414,6 +514,7 @@ local function StartFly()
 
 		local Direction = Vector3.zero
 
+		-- Keyboard
 		if UIS:IsKeyDown(Enum.KeyCode.W) then
 			Direction += Camera.CFrame.LookVector
 		end
@@ -430,7 +531,6 @@ local function StartFly()
 			Direction += Camera.CFrame.RightVector
 		end
 
-		-- Mobile / keyboard vertical
 		Direction += Vector3.new(
 			0,
 			FlyVertical,
@@ -452,16 +552,16 @@ end
 FlyButton.MouseButton1Click:Connect(function()
 
 	if Flying then
-
 		StopFly()
-
 	else
-
 		StartFly()
-
 	end
 
 end)
+
+--========================================================--
+-- FLY UP/DOWN
+--========================================================--
 
 UpButton.MouseButton1Down:Connect(function()
 
@@ -491,60 +591,42 @@ end)
 -- SPEED
 --========================================================--
 
-local SpeedBox = Instance.new("TextBox")
-
-SpeedBox.Size = UDim2.new(1, -30, 0, 40)
-
-SpeedBox.Position = UDim2.new(0, 15, 0, 180)
-
-SpeedBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-
-SpeedBox.BorderSizePixel = 0
-
-SpeedBox.Text = "50"
-
-SpeedBox.PlaceholderText = "Speed"
-
-SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-SpeedBox.TextSize = 16
-
-SpeedBox.Font = Enum.Font.Gotham
-
-SpeedBox.Parent = Content
-
-local SpeedCorner = Instance.new("UICorner")
-
-SpeedCorner.CornerRadius = UDim.new(0, 8)
-
-SpeedCorner.Parent = SpeedBox
+local SpeedBox = CreateBox(
+	"Masukkan Speed",
+	"50"
+)
 
 local SpeedButton = CreateButton(
-	"⚡ SET SPEED",
-	230
+	"⚡ SET SPEED"
 )
 
 SpeedButton.MouseButton1Click:Connect(function()
 
 	local Value = tonumber(SpeedBox.Text)
 
-	if Value then
+	if not Value then
+		return
+	end
 
-		WalkSpeed = math.clamp(Value, 0, 500)
+	WalkSpeed = math.clamp(Value, 0, 500)
 
-		if Humanoid then
+	if Humanoid then
 
-			Humanoid.WalkSpeed = WalkSpeed
+		Humanoid.WalkSpeed = WalkSpeed
+
+	end
+
+	SpeedButton.Text = "⚡ SPEED: " .. WalkSpeed
+
+	task.delay(1, function()
+
+		if SpeedButton then
+
+			SpeedButton.Text = "⚡ SET SPEED"
 
 		end
 
-		SpeedButton.Text = "⚡ SPEED: " .. WalkSpeed
-
-		task.wait(1)
-
-		SpeedButton.Text = "⚡ SET SPEED"
-
-	end
+	end)
 
 end)
 
@@ -552,62 +634,98 @@ end)
 -- JUMP
 --========================================================--
 
-local JumpBox = Instance.new("TextBox")
-
-JumpBox.Size = UDim2.new(1, -30, 0, 40)
-
-JumpBox.Position = UDim2.new(0, 15, 0, 280)
-
-JumpBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-
-JumpBox.BorderSizePixel = 0
-
-JumpBox.Text = "50"
-
-JumpBox.PlaceholderText = "Jump Power"
-
-JumpBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-JumpBox.TextSize = 16
-
-JumpBox.Font = Enum.Font.Gotham
-
-JumpBox.Parent = Content
-
-local JumpCorner = Instance.new("UICorner")
-
-JumpCorner.CornerRadius = UDim.new(0, 8)
-
-JumpCorner.Parent = JumpBox
+local JumpBox = CreateBox(
+	"Masukkan Jump Power",
+	"50"
+)
 
 local JumpButton = CreateButton(
-	"🦘 SET JUMP",
-	330
+	"🦘 SET JUMP"
 )
 
 JumpButton.MouseButton1Click:Connect(function()
 
 	local Value = tonumber(JumpBox.Text)
 
-	if Value then
+	if not Value then
+		return
+	end
 
-		JumpPower = math.clamp(Value, 0, 500)
+	JumpPower = math.clamp(Value, 0, 500)
 
-		if Humanoid then
+	if Humanoid then
 
-			Humanoid.UseJumpPower = true
+		Humanoid.UseJumpPower = true
 
-			Humanoid.JumpPower = JumpPower
+		Humanoid.JumpPower = JumpPower
+
+	end
+
+	JumpButton.Text = "🦘 JUMP: " .. JumpPower
+
+	task.delay(1, function()
+
+		if JumpButton then
+
+			JumpButton.Text = "🦘 SET JUMP"
 
 		end
 
-		JumpButton.Text = "🦘 JUMP: " .. JumpPower
+	end)
 
-		task.wait(1)
+end)
 
-		JumpButton.Text = "🦘 SET JUMP"
+--========================================================--
+-- PLAYER TARGET
+--========================================================--
 
-	end
+local PlayerBox = CreateBox(
+	"Nama player"
+)
+
+--========================================================--
+-- KICK
+--========================================================--
+
+local KickButton = CreateButton(
+	"👢 KICK PLAYER"
+)
+
+KickButton.MouseButton1Click:Connect(function()
+
+	-- LocalScript tidak punya otoritas
+	-- untuk benar-benar kick player lain.
+
+	KickButton.Text = "⚠ SERVER REQUIRED"
+
+	task.delay(2, function()
+
+		KickButton.Text = "👢 KICK PLAYER"
+
+	end)
+
+end)
+
+--========================================================--
+-- BAN
+--========================================================--
+
+local BanButton = CreateButton(
+	"🚫 BAN PLAYER"
+)
+
+BanButton.MouseButton1Click:Connect(function()
+
+	-- LocalScript tidak bisa melakukan
+	-- server-side ban yang sebenarnya.
+
+	BanButton.Text = "⚠ SERVER REQUIRED"
+
+	task.delay(2, function()
+
+		BanButton.Text = "🚫 BAN PLAYER"
+
+	end)
 
 end)
 
@@ -616,13 +734,12 @@ end)
 --========================================================--
 
 local SoundButton = CreateButton(
-	"🔊 PRANK SOUND",
-	380
+	"🔊 PRANK SOUND"
 )
 
 local PrankSound = Instance.new("Sound")
 
-PrankSound.Name = "ASTRONIXP_PRANK_SOUND"
+PrankSound.Name = "ASTRONIXP_PRANK"
 
 PrankSound.SoundId = PRANK_SOUND_ID
 
@@ -632,11 +749,11 @@ PrankSound.Parent = SoundService
 
 SoundButton.MouseButton1Click:Connect(function()
 
-	if PrankSound.SoundId ~= "" then
+	PrankSound:Stop()
 
-		PrankSound:Play()
+	PrankSound.TimePosition = 0
 
-	end
+	PrankSound:Play()
 
 end)
 
@@ -645,28 +762,28 @@ end)
 --========================================================--
 
 local FaceButton = CreateButton(
-	"😹 FACE PRANK",
-	430
+	"😹 FACE PRANK"
 )
 
 FaceButton.MouseButton1Click:Connect(function()
 
-	if FACE_IMAGE_ID == "rbxassetid://MASUKKAN_ID_GAMBAR" then
-
-		warn("Masukkan asset ID gambar muka lu terlebih dahulu.")
-
-		return
-
-	end
-
 	Face.Visible = true
 
-	-- Main panel tetap berada di atas sedikit
-	Main.ZIndex = 1000
+	PrankSound:Stop()
 
-	task.wait(3)
+	PrankSound.TimePosition = 0
 
-	Face.Visible = false
+	PrankSound:Play()
+
+	task.delay(3, function()
+
+		if Face then
+
+			Face.Visible = false
+
+		end
+
+	end)
 
 end)
 
@@ -684,20 +801,20 @@ MinButton.MouseButton1Click:Connect(function()
 
 		Main.Size = UDim2.new(
 			0,
-			350,
+			math.min(350, workspace.CurrentCamera.ViewportSize.X - 20),
 			0,
-			55
+			52
 		)
 
 	else
 
 		if Maximized then
 
-			Main.Size = MaxSize
+			SetMaxSize()
 
 		else
 
-			Main.Size = NormalSize
+			SetNormalSize()
 
 		end
 
@@ -713,19 +830,19 @@ MaxButton.MouseButton1Click:Connect(function()
 
 	Maximized = not Maximized
 
+	Minimized = false
+
+	Content.Visible = true
+
 	if Maximized then
 
-		Main.Size = MaxSize
-
-		Main.Position = MaxPosition
+		SetMaxSize()
 
 		MaxButton.Text = "❐"
 
 	else
 
-		Main.Size = NormalSize
-
-		Main.Position = NormalPosition
+		SetNormalSize()
 
 		MaxButton.Text = "□"
 
@@ -739,9 +856,9 @@ end)
 
 CloseButton.MouseButton1Click:Connect(function()
 
-	Closed = true
-
 	StopFly()
+
+	PrankSound:Destroy()
 
 	GUI:Destroy()
 
@@ -752,9 +869,7 @@ end)
 --========================================================--
 
 local Dragging = false
-
 local DragStart
-
 local StartPosition
 
 TitleBar.InputBegan:Connect(function(Input)
@@ -806,7 +921,7 @@ UIS.InputEnded:Connect(function(Input)
 end)
 
 --========================================================--
--- DEFAULT CHARACTER
+-- DEFAULT
 --========================================================--
 
 if Humanoid then
@@ -819,374 +934,9 @@ if Humanoid then
 
 end
 
-print("====================================")
-print(" ASTRONIXP ADMIN PANEL V2 LOADED")
-print(" SINGLE FILE")
+print("======================================")
+print(" ASTRONIXP ADMIN PANEL V2.1")
+print(" MOBILE RESPONSIVE")
+print(" SCROLL ENABLED")
 print(" NO KEY")
-print("====================================")local DragStart
-local StartPosition
-
-Title.InputBegan:Connect(function(Input)
-	if Input.UserInputType == Enum.UserInputType.MouseButton1
-	or Input.UserInputType == Enum.UserInputType.Touch then
-
-		Dragging = true
-		DragStart = Input.Position
-		StartPosition = Main.Position
-	end
-end)
-
-UIS.InputChanged:Connect(function(Input)
-	if not Dragging then
-		return
-	end
-
-	if Input.UserInputType == Enum.UserInputType.MouseMovement
-	or Input.UserInputType == Enum.UserInputType.Touch then
-
-		local Delta = Input.Position - DragStart
-
-		Main.Position = UDim2.new(
-			StartPosition.X.Scale,
-			StartPosition.X.Offset + Delta.X,
-			StartPosition.Y.Scale,
-			StartPosition.Y.Offset + Delta.Y
-		)
-	end
-end)
-
-UIS.InputEnded:Connect(function(Input)
-	if Input.UserInputType == Enum.UserInputType.MouseButton1
-	or Input.UserInputType == Enum.UserInputType.Touch then
-
-		Dragging = false
-	end
-end)
-
---==================================================
--- BUTTON FUNCTION
---==================================================
-
-local function Button(Text, PositionY)
-
-	local B = Instance.new("TextButton")
-
-	B.Size = UDim2.new(1, -30, 0, 42)
-	B.Position = UDim2.new(0, 15, 0, PositionY)
-
-	B.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-	B.BorderSizePixel = 0
-
-	B.Text = Text
-	B.TextColor3 = Color3.fromRGB(255, 255, 255)
-	B.TextSize = 16
-	B.Font = Enum.Font.GothamBold
-
-	B.Parent = Main
-
-	local C = Instance.new("UICorner")
-	C.CornerRadius = UDim.new(0, 8)
-	C.Parent = B
-
-	return B
-end
-
---==================================================
--- FLY
---==================================================
-
-local FlyButton = Button("🪽 FLY : OFF", 80)
-
-local function StopFly()
-
-	Flying = false
-
-	FlyButton.Text = "🪽 FLY : OFF"
-
-	if FlyConnection then
-		FlyConnection:Disconnect()
-		FlyConnection = nil
-	end
-
-	if BodyVelocity then
-		BodyVelocity:Destroy()
-		BodyVelocity = nil
-	end
-end
-
-local function StartFly()
-
-	if Flying then
-		return
-	end
-
-	GetCharacter()
-
-	Flying = true
-	FlyButton.Text = "🪽 FLY : ON"
-
-	BodyVelocity = Instance.new("BodyVelocity")
-	BodyVelocity.MaxForce = Vector3.new(
-		math.huge,
-		math.huge,
-		math.huge
-	)
-	BodyVelocity.Velocity = Vector3.zero
-	BodyVelocity.Parent = RootPart
-
-	FlyConnection = RunService.RenderStepped:Connect(function()
-
-		if not Flying or not RootPart then
-			return
-		end
-
-		local Camera = workspace.CurrentCamera
-		local Direction = Vector3.zero
-
-		if UIS:IsKeyDown(Enum.KeyCode.W) then
-			Direction += Camera.CFrame.LookVector
-		end
-
-		if UIS:IsKeyDown(Enum.KeyCode.S) then
-			Direction -= Camera.CFrame.LookVector
-		end
-
-		if UIS:IsKeyDown(Enum.KeyCode.A) then
-			Direction -= Camera.CFrame.RightVector
-		end
-
-		if UIS:IsKeyDown(Enum.KeyCode.D) then
-			Direction += Camera.CFrame.RightVector
-		end
-
-		if UIS:IsKeyDown(Enum.KeyCode.Space) then
-			Direction += Vector3.new(0, 1, 0)
-		end
-
-		if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-			Direction -= Vector3.new(0, 1, 0)
-		end
-
-		if Direction.Magnitude > 0 then
-			Direction = Direction.Unit * FlySpeed
-		end
-
-		BodyVelocity.Velocity = Direction
-	end)
-end
-
-FlyButton.MouseButton1Click:Connect(function()
-
-	if Flying then
-		StopFly()
-	else
-		StartFly()
-	end
-
-end)
-
---==================================================
--- SPEED
---==================================================
-
-local SpeedBox = Instance.new("TextBox")
-
-SpeedBox.Size = UDim2.new(1, -30, 0, 40)
-SpeedBox.Position = UDim2.new(0, 15, 0, 135)
-
-SpeedBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-SpeedBox.BorderSizePixel = 0
-
-SpeedBox.Text = "50"
-SpeedBox.PlaceholderText = "Speed"
-SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedBox.TextSize = 16
-SpeedBox.Font = Enum.Font.Gotham
-
-SpeedBox.Parent = Main
-
-local SC = Instance.new("UICorner")
-SC.CornerRadius = UDim.new(0, 8)
-SC.Parent = SpeedBox
-
-local SpeedButton = Button("⚡ SET SPEED", 180)
-
-SpeedButton.MouseButton1Click:Connect(function()
-
-	local Value = tonumber(SpeedBox.Text)
-
-	if Value then
-
-		WalkSpeed = math.clamp(Value, 0, 500)
-
-		if Humanoid then
-			Humanoid.WalkSpeed = WalkSpeed
-		end
-
-		SpeedButton.Text = "⚡ SPEED: " .. WalkSpeed
-
-		task.wait(1)
-
-		SpeedButton.Text = "⚡ SET SPEED"
-	end
-
-end)
-
---==================================================
--- JUMP
---==================================================
-
-local JumpBox = Instance.new("TextBox")
-
-JumpBox.Size = UDim2.new(1, -30, 0, 40)
-JumpBox.Position = UDim2.new(0, 15, 0, 235)
-
-JumpBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-JumpBox.BorderSizePixel = 0
-
-JumpBox.Text = "50"
-JumpBox.PlaceholderText = "Jump Power"
-JumpBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpBox.TextSize = 16
-JumpBox.Font = Enum.Font.Gotham
-
-JumpBox.Parent = Main
-
-local JC = Instance.new("UICorner")
-JC.CornerRadius = UDim.new(0, 8)
-JC.Parent = JumpBox
-
-local JumpButton = Button("🦘 SET JUMP", 280)
-
-JumpButton.MouseButton1Click:Connect(function()
-
-	local Value = tonumber(JumpBox.Text)
-
-	if Value then
-
-		JumpPower = math.clamp(Value, 0, 500)
-
-		if Humanoid then
-			Humanoid.UseJumpPower = true
-			Humanoid.JumpPower = JumpPower
-		end
-
-		JumpButton.Text = "🦘 JUMP: " .. JumpPower
-
-		task.wait(1)
-
-		JumpButton.Text = "🦘 SET JUMP"
-	end
-
-end)
-
---==================================================
--- PLAYER TARGET
---==================================================
-
-local PlayerBox = Instance.new("TextBox")
-
-PlayerBox.Size = UDim2.new(1, -30, 0, 40)
-PlayerBox.Position = UDim2.new(0, 15, 0, 335)
-
-PlayerBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-PlayerBox.BorderSizePixel = 0
-
-PlayerBox.Text = ""
-PlayerBox.PlaceholderText = "Nama player..."
-PlayerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-PlayerBox.TextSize = 16
-PlayerBox.Font = Enum.Font.Gotham
-
-PlayerBox.Parent = Main
-
-local PC = Instance.new("UICorner")
-PC.CornerRadius = UDim.new(0, 8)
-PC.Parent = PlayerBox
-
---==================================================
--- FIND PLAYER
---==================================================
-
-local function FindPlayer(Name)
-
-	Name = Name:lower()
-
-	for _, P in ipairs(Players:GetPlayers()) do
-
-		if P ~= Player then
-
-			if P.Name:lower():sub(1, #Name) == Name
-			or P.DisplayName:lower():sub(1, #Name) == Name then
-
-				return P
-			end
-
-		end
-	end
-
-	return nil
-end
-
---==================================================
--- KICK
---==================================================
-
-local KickButton = Button("👢 KICK PLAYER", 385)
-
-KickButton.MouseButton1Click:Connect(function()
-
-	local Target = FindPlayer(PlayerBox.Text)
-
-	if Target then
-
-		-- V1 LocalScript
-		-- Hanya mencoba kick dari sisi client
-
-		Target:Kick("Kicked by ASTRONIXP")
-
-		PlayerBox.Text = ""
-	end
-
-end)
-
---==================================================
--- BAN
---==================================================
-
-local BanButton = Button("🚫 BAN PLAYER", 435)
-
-BanButton.MouseButton1Click:Connect(function()
-
-	local Target = FindPlayer(PlayerBox.Text)
-
-	if Target then
-
-		-- Ban lokal V1
-		-- Belum permanent/server-side
-
-		Target:Kick("Banned by ASTRONIXP")
-
-		PlayerBox.Text = ""
-	end
-
-end)
-
---==================================================
--- DEFAULT
---==================================================
-
-if Humanoid then
-
-	Humanoid.WalkSpeed = WalkSpeed
-
-	Humanoid.UseJumpPower = true
-	Humanoid.JumpPower = JumpPower
-
-end
-
-print("================================")
-print("ASTRONIXP ADMIN PANEL V1")
-print("NO KEY")
-print("ADMIN: ASTRONIXP")
-print("================================")
+print("======================================")
